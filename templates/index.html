@@ -1,0 +1,394 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI 임직원 선물 입찰 트렌드 분석기</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/main.css') }}">
+    <!-- Chart.js CDN for interactive visualizations -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body>
+    <header>
+        <div class="nav-container">
+            <a href="/" class="logo">
+                <span class="logo-icon">🎁</span>
+                <span>GiftBid AI Trend</span>
+            </a>
+            <nav class="nav-links">
+                <a href="/" class="nav-link active">대시보드</a>
+                <a href="/evaluator" class="nav-link">자가 평가 시뮬레이터</a>
+            </nav>
+        </div>
+    </header>
+
+    <main>
+        <div class="flex-between mb-1">
+            <div>
+                <h1>임직원 선물 입찰 트렌드 분석 대시보드</h1>
+                <p class="subtitle">크롤링된 B2B 선물 입찰 데이터를 분석하여 도출된 유형별 트렌드와 인사이트를 확인하세요.</p>
+            </div>
+            <div>
+                <a href="/evaluator" class="btn btn-primary">
+                    <span>자가 평가기 바로가기</span> ➔
+                </a>
+            </div>
+        </div>
+
+        <!-- KPIs -->
+        <div class="stats-grid">
+            <div class="card stat-card">
+                <div class="stat-header">
+                    <span>분석된 총 입찰 건수</span>
+                    <span class="stat-icon">📊</span>
+                </div>
+                <div class="stat-value">{{ stats.total }}건</div>
+                <div class="stat-desc">DB에 수집된 임직원 복지선물 공고</div>
+            </div>
+            <div class="card stat-card">
+                <div class="stat-header">
+                    <span>온누리 상품권 비중</span>
+                    <span class="stat-icon">🪙</span>
+                </div>
+                <div class="stat-value">{{ stats.onnuri_pct }}%</div>
+                <div class="stat-desc">전통시장 활성화 및 온누리 구매 비율</div>
+            </div>
+            <div class="card stat-card">
+                <div class="stat-header">
+                    <span>모바일 쿠폰 비율</span>
+                    <span class="stat-icon">📱</span>
+                </div>
+                <div class="stat-value">{{ stats.coupon_pct }}%</div>
+                <div class="stat-desc">기프티콘, 모바일 상품권 발송형</div>
+            </div>
+            <div class="card stat-card">
+                <div class="stat-header">
+                    <span>실물 및 선택형몰 비중</span>
+                    <span class="stat-icon">📦</span>
+                </div>
+                <div class="stat-value">{{ stats.physical_pct }}%</div>
+                <div class="stat-desc">명절선물세트 / 선택형 생활가전 등</div>
+            </div>
+        </div>
+
+        <!-- Dashboard Layout -->
+        <div class="dashboard-layout">
+            <!-- Left Side: Interactive Charts & Bids List -->
+            <div style="display: flex; flex-direction: column; gap: 2rem;">
+                <!-- Chart Cards inside a grid-2 -->
+                <div class="grid-2">
+                    <div class="card">
+                        <h2>🎁 선물 조달 유형 분포</h2>
+                        <div class="chart-container">
+                            <canvas id="typeDoughnutChart"></canvas>
+                        </div>
+                    </div>
+                    <div class="card">
+                        <h2>💰 입찰 예산 분포 (단위: 건수)</h2>
+                        <div class="chart-container">
+                            <canvas id="budgetBarChart"></canvas>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- NEW Grid for Corporate Types & Qualifications -->
+                <div class="grid-2" style="margin-top: 1.5rem;">
+                    <div class="card">
+                        <h2>🏢 입찰 적격 기업 유형 분포</h2>
+                        <div class="chart-container">
+                            <canvas id="companyTypeDoughnutChart"></canvas>
+                        </div>
+                    </div>
+                    <div class="card">
+                        <h2>📋 추가 자격 요건 요구 빈도 (중복 허용)</h2>
+                        <div class="chart-container">
+                            <canvas id="qualificationsHorizontalBarChart"></canvas>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Bids Table Card -->
+                <div class="card">
+                    <div class="flex-between mb-1" style="flex-wrap: wrap; gap: 1rem;">
+                        <h2>수집된 명절/기념일 입찰 공고 목록</h2>
+                        <form method="GET" action="/" style="display: flex; gap: 0.5rem; align-items: center;">
+                            <select name="type_filter" class="eval-select" style="width: auto; padding: 0.4rem 1.5rem 0.4rem 0.75rem;" onchange="this.form.submit()">
+                                <option value="전체" {% if current_filter == '전체' %}selected{% endif %}>모든 유형</option>
+                                <option value="온누리상품권" {% if current_filter == '온누리상품권' %}selected{% endif %}>온누리상품권</option>
+                                <option value="모바일상품권" {% if current_filter == '모바일상품권' %}selected{% endif %}>모바일상품권 (쿠폰)</option>
+                                <option value="선물세트 (육류)" {% if current_filter == '선물세트 (육류)' %}selected{% endif %}>선물세트 (육류)</option>
+                                <option value="선물세트 (과일/농산물)" {% if current_filter == '선물세트 (과일/농산물)' %}selected{% endif %}>선물세트 (과일/농산물)</option>
+                                <option value="선물세트 (생선/수산물)" {% if current_filter == '선물세트 (생선/수산물)' %}selected{% endif %}>선물세트 (생선/수산물)</option>
+                                <option value="선물세트 (가전제품)" {% if current_filter == '선물세트 (가전제품)' %}selected{% endif %}>선물세트 (가전제품)</option>
+                                <option value="선물세트 (주방기구/생활용품)" {% if current_filter == '선물세트 (주방기구/생활용품)' %}selected{% endif %}>선물세트 (주방/생활용품)</option>
+                                <option value="선물세트 (건강식품/기타)" {% if current_filter == '선물세트 (건강식품/기타)' %}selected{% endif %}>선물세트 (건강식품/기타)</option>
+                            </select>
+                        </form>
+                    </div>
+
+                    <div class="table-container">
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>발주 기관</th>
+                                    <th>공고명</th>
+                                    <th>예산 규모</th>
+                                    <th>입찰 구분</th>
+                                    <th>상태</th>
+                                    <th>AI 분석</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for bid in bids %}
+                                <tr>
+                                    <td style="font-weight: 600;">{{ bid.institution }}</td>
+                                    <td>
+                                        <div style="max-width: 320px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;" title="{{ bid.title }}">
+                                            {{ bid.title }}
+                                        </div>
+                                    </td>
+                                    <td>{{ bid.budget }}</td>
+                                    <td>
+                                        {% if bid.inferred_type == '온누리상품권' %}
+                                        <span class="badge badge-primary">온누리상품권</span>
+                                        {% elif bid.inferred_type == '모바일상품권' %}
+                                        <span class="badge badge-secondary">모바일상품권</span>
+                                        {% elif bid.inferred_type == '선물세트 (육류)' %}
+                                        <span class="badge" style="background: rgba(244, 63, 94, 0.15); color: #fda4af; border: 1px solid rgba(244, 63, 94, 0.3);">선물세트 (육류)</span>
+                                        {% elif bid.inferred_type == '선물세트 (과일/농산물)' %}
+                                        <span class="badge badge-warning">과일/농산물</span>
+                                        {% elif bid.inferred_type == '선물세트 (생선/수산물)' %}
+                                        <span class="badge" style="background: rgba(20, 184, 166, 0.15); color: #99f6e4; border: 1px solid rgba(20, 184, 166, 0.3);">생선/수산물</span>
+                                        {% elif bid.inferred_type == '선물세트 (가전제품)' %}
+                                        <span class="badge badge-success">가전제품</span>
+                                        {% elif bid.inferred_type == '선물세트 (주방기구/생활용품)' %}
+                                        <span class="badge" style="background: rgba(236, 72, 153, 0.15); color: #fbcfe8; border: 1px solid rgba(236, 72, 153, 0.3);">주방/생활용품</span>
+                                        {% else %}
+                                        <span class="badge" style="background: rgba(139, 92, 246, 0.15); color: #ddd6fe; border: 1px solid rgba(139, 92, 246, 0.3);">건강식품/기타</span>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        {% if bid.status == '입찰중' %}
+                                        <span class="badge badge-success">입찰중</span>
+                                        {% else %}
+                                        <span class="badge badge-danger">마감</span>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        <a href="/analyzer/{{ bid.id }}" class="btn btn-secondary" style="padding: 0.3rem 0.7rem; font-size: 0.8rem;">
+                                            AI 분석 ➔
+                                        </a>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Right Side: AI Trends & Insights -->
+            <div style="display: flex; flex-direction: column; gap: 2rem;">
+                <div class="card" style="background: radial-gradient(circle at bottom left, rgba(99, 102, 241, 0.1) 0%, var(--bg-glass) 80%);">
+                    <h2>🤖 AI 트렌드 리포트</h2>
+                    <p class="stat-desc" style="margin-bottom: 1.5rem;">공고 데이터를 종합 분석한 핵심 복지 트렌드</p>
+                    
+                    <div class="insight-list">
+                        <div class="insight-item">
+                            <div class="insight-title">🪙 온누리전통시장 상품권</div>
+                            <div class="insight-body">공공기관의 ESG/상생 지표 평가 요소와 직결되어 도입 비중이 급격히 높음. 모바일 앱이나 간편결제 카드 기반 대행 능력이 낙찰의 열쇠입니다.</div>
+                        </div>
+                        <div class="insight-item sky">
+                            <div class="insight-title">📱 모바일 쿠폰 & 기프티콘</div>
+                            <div class="insight-body">생일/결혼기념일 등 상시 지급 복지는 전량 모바일 쿠폰화. 백화점상품권부터 커피 기프티콘까지 폭넓은 옵션을 임직원이 선택하도록 구축하는 것이 필수입니다.</div>
+                        </div>
+                        <div class="insight-item rose">
+                            <div class="insight-title">📦 선물세트 및 실물 기프트</div>
+                            <div class="insight-body">단순 단일 품목 배송에서 '4~6종 선택형' 가전/신선식품 멀티 구성으로 진화. 개별 가호 택배 오배송/파손 처리가 중요 리스크 관리 요소입니다.</div>
+                        </div>
+                        <div class="insight-item emerald">
+                            <div class="insight-title">💻 선택형 복지몰 운영</div>
+                            <div class="insight-body">대규모 공사/기업들은 입찰 기업에게 임직원 전용 선택 복지몰 웹/앱 제공을 간접 요구하고 있어, IT 솔루션 보유사가 큰 가산점을 획득하고 있습니다.</div>
+                        </div>
+                        <div class="insight-item warning">
+                            <div class="insight-title">✏️ 평가 방식 핵심 트렌드</div>
+                            <div class="insight-body">1차 서류를 통과한 상위 10개사에 대해 실물 품평회를 열고 임직원 블라인드 선호도 투표를 결합하는 하이브리드 평가 비중이 대기업 중심으로 확산 중.</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Self evaluation Ad card -->
+                <div class="card" style="background: linear-gradient(135deg, rgba(99, 102, 241, 0.15) 0%, rgba(14, 165, 233, 0.1) 100%);">
+                    <h2>🎯 내 입찰 경쟁력은?</h2>
+                    <p class="stat-desc" style="margin-bottom: 1.25rem;">표준 평가 모델 가중치를 기반으로 귀사의 제안 준비도를 시뮬레이션해 보세요.</p>
+                    <a href="/evaluator" class="btn btn-primary" style="width: 100%;">
+                        <span>지금 자가평가 시작하기</span>
+                    </a>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <!-- Chart Configuration Script -->
+    <script>
+        // Doughnut Chart for Bid Types (Refined 8 categories)
+        const ctxDoughnut = document.getElementById('typeDoughnutChart').getContext('2d');
+        new Chart(ctxDoughnut, {
+            type: 'doughnut',
+            data: {
+                labels: [
+                    '온누리상품권', '모바일상품권', '선물세트 (육류)', 
+                    '선물세트 (과일)', '선물세트 (생선/수산)', 
+                    '선물세트 (가전)', '선물세트 (주방/생활)', '건강식품/기타'
+                ],
+                datasets: [{
+                    data: [
+                        {{ chart_data.onnuri }}, 
+                        {{ chart_data.coupon }}, 
+                        {{ chart_data.meat }}, 
+                        {{ chart_data.fruit }}, 
+                        {{ chart_data.fish }}, 
+                        {{ chart_data.appliance }}, 
+                        {{ chart_data.kitchen }}, 
+                        {{ chart_data.health_etc }}
+                    ],
+                    backgroundColor: [
+                        '#6366f1', '#0ea5e9', '#f43f5e', 
+                        '#f59e0b', '#14b8a6', '#10b981', 
+                        '#ec4899', '#8b5cf6'
+                    ],
+                    borderColor: 'rgba(255, 255, 255, 0.08)',
+                    borderWidth: 2,
+                    hoverOffset: 10
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        position: 'bottom',
+                        labels: {
+                            color: '#94a3b8',
+                            boxWidth: 12,
+                            font: { family: 'Outfit, sans-serif', size: 10 }
+                        }
+                    }
+                }
+            }
+        });
+
+        // Bar Chart for Budgets
+        const ctxBar = document.getElementById('budgetBarChart').getContext('2d');
+        new Chart(ctxBar, {
+            type: 'bar',
+            data: {
+                labels: ['5천만 미만', '5천만~1억', '1억~3억', '3억 이상', '단가계약(별도)'],
+                datasets: [{
+                    label: '공고 수',
+                    data: [{{ chart_data.budget_bands[0] }}, {{ chart_data.budget_bands[1] }}, {{ chart_data.budget_bands[2] }}, {{ chart_data.budget_bands[3] }}, {{ chart_data.budget_bands[4] }}],
+                    backgroundColor: 'rgba(14, 165, 233, 0.7)',
+                    borderColor: '#0ea5e9',
+                    borderWidth: 1.5,
+                    borderRadius: 6
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: { display: false }
+                },
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        ticks: { color: '#94a3b8', stepSize: 1 },
+                        grid: { color: 'rgba(255, 255, 255, 0.05)' }
+                    },
+                    x: {
+                        ticks: { color: '#94a3b8' },
+                        grid: { display: false }
+                    }
+                }
+            }
+        });
+
+        // NEW: Corporate Types Doughnut Chart
+        const ctxComp = document.getElementById('companyTypeDoughnutChart').getContext('2d');
+        new Chart(ctxComp, {
+            type: 'doughnut',
+            data: {
+                labels: ['온라인쇼핑몰', '유통사업자', '직접 생산자', '쿠폰/대행사업자'],
+                datasets: [{
+                    data: [
+                        {{ chart_data.company_types.mall }},
+                        {{ chart_data.company_types.distributor }},
+                        {{ chart_data.company_types.producer }},
+                        {{ chart_data.company_types.coupon_provider }}
+                    ],
+                    backgroundColor: ['#0ea5e9', '#ec4899', '#10b981', '#8b5cf6'],
+                    borderColor: 'rgba(255, 255, 255, 0.08)',
+                    borderWidth: 2,
+                    hoverOffset: 10
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        position: 'bottom',
+                        labels: {
+                            color: '#94a3b8',
+                            boxWidth: 12,
+                            font: { family: 'Outfit, sans-serif', size: 10 }
+                        }
+                    }
+                }
+            }
+        });
+
+        // NEW: Qualifications Horizontal Bar Chart
+        const ctxQual = document.getElementById('qualificationsHorizontalBarChart').getContext('2d');
+        new Chart(ctxQual, {
+            type: 'bar',
+            data: {
+                labels: ['HACCP/위생인증', '전국 개별 배송망', 'CS 전담 고객센터', '공식 수탁/가맹', '신용평가등급 보증'],
+                datasets: [{
+                    label: '요구 공고 수',
+                    data: [
+                        {{ chart_data.quals.haccp }},
+                        {{ chart_data.quals.delivery }},
+                        {{ chart_data.quals.cs }},
+                        {{ chart_data.quals.official }},
+                        {{ chart_data.quals.credit }}
+                    ],
+                    backgroundColor: 'rgba(99, 102, 241, 0.7)',
+                    borderColor: '#6366f1',
+                    borderWidth: 1.5,
+                    borderRadius: 4
+                }]
+            },
+            options: {
+                indexAxis: 'y',
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: { display: false }
+                },
+                scales: {
+                    x: {
+                        beginAtZero: true,
+                        ticks: { color: '#94a3b8', stepSize: 1 },
+                        grid: { color: 'rgba(255, 255, 255, 0.05)' }
+                    },
+                    y: {
+                        ticks: { color: '#94a3b8', font: { size: 10 } },
+                        grid: { display: false }
+                    }
+                }
+            }
+        });
+    </script>
+</body>
+</html>

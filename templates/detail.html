@@ -1,0 +1,202 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI 공고 상세 분석 - {{ bid.title }}</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/main.css') }}">
+</head>
+<body>
+    <header>
+        <div class="nav-container">
+            <a href="/" class="logo">
+                <span class="logo-icon">🎁</span>
+                <span>GiftBid AI Trend</span>
+            </a>
+            <nav class="nav-links">
+                <a href="/" class="nav-link">대시보드</a>
+                <a href="/evaluator" class="nav-link">자가 평가 시뮬레이터</a>
+            </nav>
+        </div>
+    </header>
+
+    <main>
+        <div class="mb-1">
+            <a href="/" style="color: var(--color-secondary); font-size: 0.9rem; font-weight: 600;">➔ 대시보드로 돌아가기</a>
+            <h1 style="margin-top: 0.5rem; font-size: 1.8rem;">🤖 AI 입찰 공고 심층 분석 리포트</h1>
+        </div>
+
+        <div class="detail-grid">
+            <!-- Left Side: Basic Info & AI Strategy -->
+            <div style="display: flex; flex-direction: column; gap: 1.5rem;">
+                <!-- Basic Info Card -->
+                <div class="card">
+                    <h2>📋 입찰 공고 개요</h2>
+                    <div class="divider"></div>
+                    <div class="grid-2">
+                        <div class="info-item">
+                            <div class="info-label">발주 기관명</div>
+                            <div class="info-value" style="color: #a5b4fc;">{{ bid.institution }}</div>
+                        </div>
+                        <div class="info-item">
+                            <div class="info-label">기관 유형</div>
+                            <div class="info-value">{{ bid.institution_type }}</div>
+                        </div>
+                    </div>
+                    <div class="info-item">
+                        <div class="info-label">공고명</div>
+                        <div class="info-value" style="font-weight: 700;">{{ bid.title }}</div>
+                    </div>
+                    <div class="grid-2">
+                        <div class="info-item">
+                            <div class="info-label">예산 규모</div>
+                            <div class="info-value" style="color: var(--color-warning); font-weight: 700;">{{ bid.budget }}</div>
+                        </div>
+                        <div class="info-item">
+                            <div class="info-label">입찰 마감일</div>
+                            <div class="info-value" style="color: var(--color-accent); font-weight: 700;">{{ bid.deadline }}</div>
+                        </div>
+                    </div>
+                    <div class="grid-2">
+                        <div class="info-item">
+                            <div class="info-label">담당 부서</div>
+                            <div class="info-value">{{ bid.department }}</div>
+                        </div>
+                        <div class="info-item">
+                            <div class="info-label">담당자 및 연락처</div>
+                            <div class="info-value">{{ bid.manager }} ({{ bid.contact }})</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Custom self-eval redirect card -->
+                <div class="card" style="background: radial-gradient(circle at top left, rgba(14, 165, 233, 0.15) 0%, var(--bg-glass) 80%); border-color: rgba(14, 165, 233, 0.25);">
+                    <h2>🎯 이 공고의 나의 낙찰 확률은?</h2>
+                    <p class="stat-desc" style="margin-bottom: 1.25rem;">해당 공고의 맞춤 예산 및 평가 방식으로 사전 시뮬레이션을 수행합니다.</p>
+                    <a href="/evaluator?bid_id={{ bid.id }}" class="btn btn-primary" style="background: var(--color-secondary); box-shadow: 0 4px 14px 0 rgba(14, 165, 233, 0.4);">
+                        <span>이 공고 전용 자가평가 실행</span>
+                    </a>
+                </div>
+            </div>
+
+            <!-- Right Side: AI In-depth Analysis & Original RFP -->
+            <div style="display: flex; flex-direction: column; gap: 1.5rem;">
+                <!-- AI In-depth Analysis Card -->
+                <div class="card">
+                    <h2>🧠 AI 제안요청서(RFP) 분석</h2>
+                    <div class="divider"></div>
+
+                    <!-- AI Inferred Bid Category -->
+                    <div class="info-item">
+                        <div class="info-label">추정 선물 조달 유형</div>
+                        <div style="margin-top: 0.25rem;">
+                            {% if ai_analysis.type == '온누리상품권' %}
+                            <span class="badge badge-primary" style="font-size: 0.85rem; padding: 0.3rem 0.8rem;">전통시장 온누리상품권 조달형</span>
+                            {% elif ai_analysis.type == '모바일상품권' %}
+                            <span class="badge badge-secondary" style="font-size: 0.85rem; padding: 0.3rem 0.8rem;">모바일 기프티콘/쿠폰 발송형</span>
+                            {% elif ai_analysis.type == '선물세트 (육류)' %}
+                            <span class="badge" style="font-size: 0.85rem; padding: 0.3rem 0.8rem; background: rgba(244, 63, 94, 0.15); color: #fda4af; border: 1px solid rgba(244, 63, 94, 0.3);">실물 선물세트 (육류 조달형)</span>
+                            {% elif ai_analysis.type == '선물세트 (과일/농산물)' %}
+                            <span class="badge badge-warning" style="font-size: 0.85rem; padding: 0.3rem 0.8rem;">실물 선물세트 (과일/농산물 조달형)</span>
+                            {% elif ai_analysis.type == '선물세트 (생선/수산물)' %}
+                            <span class="badge" style="font-size: 0.85rem; padding: 0.3rem 0.8rem; background: rgba(20, 184, 166, 0.15); color: #99f6e4; border: 1px solid rgba(20, 184, 166, 0.3);">실물 선물세트 (생선/수산물 조달형)</span>
+                            {% elif ai_analysis.type == '선물세트 (가전제품)' %}
+                            <span class="badge badge-success" style="font-size: 0.85rem; padding: 0.3rem 0.8rem;">실물 선물세트 (가전제품 조달형)</span>
+                            {% elif ai_analysis.type == '선물세트 (주방기구/생활용품)' %}
+                            <span class="badge" style="font-size: 0.85rem; padding: 0.3rem 0.8rem; background: rgba(236, 72, 153, 0.15); color: #fbcfe8; border: 1px solid rgba(236, 72, 153, 0.3);">실물 선물세트 (주방/생활용품 조달형)</span>
+                            {% else %}
+                            <span class="badge" style="font-size: 0.85rem; padding: 0.3rem 0.8rem; background: rgba(139, 92, 246, 0.15); color: #ddd6fe; border: 1px solid rgba(139, 92, 246, 0.3);">실물 선물세트 (건강식품/기타 조달형)</span>
+                            {% endif %}
+                        </div>
+                    </div>
+
+                    <!-- NEW: Corporate Type & Qualifications -->
+                    <div class="grid-2" style="margin: 1rem 0 1.5rem 0;">
+                        <div class="info-item">
+                            <div class="info-label">🏢 적격 기업 유형</div>
+                            <div style="margin-top: 0.25rem;">
+                                {% if ai_analysis.company_type == '온라인쇼핑몰' %}
+                                <span class="badge badge-secondary" style="font-size: 0.8rem;">온라인쇼핑몰 / 플랫폼</span>
+                                {% elif ai_analysis.company_type == '유통사업자' %}
+                                <span class="badge" style="font-size: 0.8rem; background: rgba(236, 72, 153, 0.15); color: #fbcfe8; border: 1px solid rgba(236, 72, 153, 0.3);">유통사업자</span>
+                                {% elif ai_analysis.company_type == '직접 생산자' %}
+                                <span class="badge badge-success" style="font-size: 0.8rem;">직접 생산자</span>
+                                {% else %}
+                                <span class="badge" style="font-size: 0.8rem; background: rgba(139, 92, 246, 0.15); color: #ddd6fe; border: 1px solid rgba(139, 92, 246, 0.3);">쿠폰/대행사업자</span>
+                                {% endif %}
+                            </div>
+                        </div>
+                        <div class="info-item">
+                            <div class="info-label">🔑 필수/권장 자격 요건</div>
+                            <div style="margin-top: 0.25rem; display: flex; gap: 0.3rem; flex-wrap: wrap;">
+                                {% if ai_analysis.qualifications %}
+                                    {% for qual in ai_analysis.qualifications %}
+                                        <span class="badge badge-warning" style="font-size: 0.75rem;">{{ qual }}</span>
+                                    {% endfor %}
+                                {% else %}
+                                    <span class="badge" style="font-size: 0.75rem; background: rgba(255, 255, 255, 0.05); color: var(--text-secondary); border: 1px solid var(--border-glass);">일반 제안 자격</span>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Core Requirements -->
+                    <div class="ai-summary-box">
+                        <div class="ai-header">🎯 핵심 요구사항 요약</div>
+                        <ul class="ai-bullet-list">
+                            {% for req in ai_analysis.requirements %}
+                            <li>{{ req }}</li>
+                            {% endfor %}
+                        </ul>
+                    </div>
+
+                    <!-- AI Winning Strategy -->
+                    <div class="ai-summary-box" style="background: rgba(16, 185, 129, 0.03); border-color: rgba(16, 185, 129, 0.25);">
+                        <div class="ai-header" style="color: #6ee7b7;">💡 AI 추천 제안 전략</div>
+                        <ul class="ai-bullet-list">
+                            {% for strategy in ai_analysis.strategies %}
+                            <li>{{ strategy }}</li>
+                            {% endfor %}
+                        </ul>
+                    </div>
+
+                    <!-- AI Risk Factor -->
+                    <div class="ai-summary-box" style="background: rgba(244, 63, 94, 0.03); border-color: rgba(244, 63, 94, 0.25);">
+                        <div class="ai-header" style="color: #fda4af;">⚠️ 리스크 및 대비 요건</div>
+                        <ul class="ai-bullet-list">
+                            {% for risk in ai_analysis.risks %}
+                            <li>{{ risk }}</li>
+                            {% endfor %}
+                        </ul>
+                    </div>
+                </div>
+
+                <!-- Original RFP text accordion -->
+                <div class="accordion">
+                    <div class="accordion-header" onclick="toggleAccordion()">
+                        <span>📄 수집 문서 원본 텍스트 보기</span>
+                        <span id="accordion-arrow">▼</span>
+                    </div>
+                    <div class="accordion-content" id="accordion-content" style="display: none;">
+                        {{ bid.hwpx_parsed_text }}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <script>
+        function toggleAccordion() {
+            const content = document.getElementById('accordion-content');
+            const arrow = document.getElementById('accordion-arrow');
+            if (content.style.display === 'none') {
+                content.style.display = 'block';
+                arrow.textContent = '▲';
+            } else {
+                content.style.display = 'none';
+                arrow.textContent = '▼';
+            }
+        }
+    </script>
+</body>
+</html>
