@@ -170,8 +170,10 @@
                                     <td>
                                         {% if bid.status == '입찰중' %}
                                         <span class="badge badge-success">입찰중</span>
+                                        {% elif bid.status == '마감임박' %}
+                                        <span class="badge badge-warning">마감임박</span>
                                         {% else %}
-                                        <span class="badge badge-danger">마감</span>
+                                        <span class="badge" style="background: rgba(148, 163, 184, 0.2); color: #94a3b8; border: 1px solid rgba(148, 163, 184, 0.4);">입찰마감</span>
                                         {% endif %}
                                     </td>
                                     <td>
