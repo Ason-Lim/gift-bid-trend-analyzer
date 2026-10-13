@@ -171,14 +171,49 @@
                     </div>
                 </div>
 
-                <!-- Original RFP text accordion -->
+                <!-- Attachment Download Center Card -->
+                <div class="card" style="border-color: rgba(16, 185, 129, 0.3); background: radial-gradient(circle at top right, rgba(16, 185, 129, 0.08) 0%, var(--bg-glass) 80%);">
+                    <div class="flex-between mb-2">
+                        <h2>📥 입찰공고문 & 첨부파일 다운로드</h2>
+                        <a href="/download_doc/{{ bid.id }}?tab=b2b_gift&file_type=zip" class="btn btn-primary" style="background: #10b981; border: none; font-size: 0.85rem; padding: 0.4rem 0.9rem;">
+                            <i class="fa-solid fa-file-zipper me-1"></i> 전체 ZIP 다운로드
+                        </a>
+                    </div>
+                    <p class="stat-desc" style="margin-bottom: 1rem;">입찰공고문, 제안요청서(RFP), 과업지시서, 입찰참가서식 표준 문서를 다운로드하실 수 있습니다.</p>
+                    
+                    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 0.75rem;">
+                        {% for att in bundle.attachments_list %}
+                        <div style="background: rgba(255, 255, 255, 0.03); border: 1px solid var(--border-glass); border-radius: 8px; padding: 0.8rem; display: flex; flex-direction: column; justify-content: space-between;">
+                            <div>
+                                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.3rem;">
+                                    <span class="badge" style="font-size: 0.7rem; background: rgba(99, 102, 241, 0.2); color: #a5b4fc;">{{ att.badge }}</span>
+                                    <span style="font-size: 0.75rem; color: var(--text-muted);">{{ att.size }}</span>
+                                </div>
+                                <div style="font-weight: 600; font-size: 0.85rem; color: var(--text-primary); margin-bottom: 0.2rem;">{{ att.display_name }}</div>
+                                <div style="font-size: 0.75rem; color: var(--text-secondary); line-height: 1.4;">{{ att.desc }}</div>
+                            </div>
+                            <a href="{{ att.download_url }}" class="btn btn-secondary" style="margin-top: 0.6rem; padding: 0.3rem 0.6rem; font-size: 0.75rem; text-align: center;">
+                                다운로드 ➔
+                            </a>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+
+                <!-- Original Full Document & RFP Accordion -->
                 <div class="accordion">
                     <div class="accordion-header" onclick="toggleAccordion()">
-                        <span>📄 수집 문서 원본 텍스트 보기</span>
+                        <span>📄 전체 입찰 공고문 및 제안요청서(RFP) 전문 보기</span>
                         <span id="accordion-arrow">▼</span>
                     </div>
-                    <div class="accordion-content" id="accordion-content" style="display: none;">
-                        {{ bid.hwpx_parsed_text }}
+                    <div class="accordion-content" id="accordion-content" style="display: none; padding: 1.5rem; background: rgba(11, 15, 25, 0.95); font-family: monospace; font-size: 0.85rem; line-height: 1.8; max-height: 500px; overflow-y: auto;">
+                        <div style="margin-bottom: 1rem; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--border-glass); padding-bottom: 0.5rem;">
+                            <span style="color: var(--color-secondary); font-weight: 600;">[전체 통합 전문]</span>
+                            <a href="/notice/b2b_gift/{{ bid.id }}" target="_blank" style="color: var(--color-primary); font-size: 0.8rem;">
+                                새 탭에서 공고문 전용 뷰어로 열기 ➔
+                            </a>
+                        </div>
+                        <pre style="white-space: pre-wrap; word-break: break-all; margin: 0; color: #cbd5e1;">{{ bundle.full_text }}</pre>
                     </div>
                 </div>
             </div>

@@ -177,9 +177,17 @@
                                         {% endif %}
                                     </td>
                                     <td>
-                                        <a href="/analyzer/{{ bid.id }}" class="btn btn-secondary" style="padding: 0.3rem 0.7rem; font-size: 0.8rem;">
-                                            AI 분석 ➔
-                                        </a>
+                                        <div style="display: flex; gap: 0.35rem; align-items: center;">
+                                            <a href="/notice/b2b_gift/{{ bid.id }}" target="_blank" class="btn btn-secondary" style="padding: 0.25rem 0.5rem; font-size: 0.75rem; background: rgba(56, 189, 248, 0.15); color: #38bdf8; border: 1px solid rgba(56, 189, 248, 0.3);" title="공고문 뷰어 열기">
+                                                공고문
+                                            </a>
+                                            <a href="/download_doc/{{ bid.id }}?tab=b2b_gift&file_type=zip" class="btn btn-secondary" style="padding: 0.25rem 0.5rem; font-size: 0.75rem; background: rgba(16, 185, 129, 0.15); color: #34d399; border: 1px solid rgba(16, 185, 129, 0.3);" title="전체 첨부파일 다운로드 (ZIP)">
+                                                ZIP
+                                            </a>
+                                            <a href="/analyzer/{{ bid.id }}" class="btn btn-secondary" style="padding: 0.25rem 0.5rem; font-size: 0.75rem;">
+                                                AI분석 ➔
+                                            </a>
+                                        </div>
                                     </td>
                                 </tr>
                                 {% endfor %}
